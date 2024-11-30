@@ -4,7 +4,7 @@ from faker import Faker
 from faker.providers import internet
 
 # track_id,artists,album_name,track_name,popularity,duration_ms,explicit,danceability,energy,key,loudness,mode,speechiness,acousticness,instrumentalness,liveness,valence,tempo,time_signature,track_genre
-df = p.read_csv('dataset.csv')
+df = p.read_csv('dataset_mod.csv')
 
 faker = Faker()
 Faker.seed(10)
@@ -13,23 +13,23 @@ faker.add_provider(internet)
 nrows = df.shape[0]
 
 album_artist = df[['album_name', 'artists', 'track_genre']].drop_duplicates()
-
+print(album_artist.to_csv(index=False))
 genre_list = df['track_genre'].unique()
 
 def tabla_artistas():
-    # artista_mail, name, password, info, picture (random_url)
-    # TODO: en la tabla de artistas, hay un atributo country pero en el dataset no hay esa info
-    # TODO: no sé que colocar en info
+    unique_emails = [faker.unique.ascii_email() for _ in range(len(album_artist))]
+    unique_passwords = [faker.unique.password(randint(8, 12)) for _ in range(len(album_artist))]
+    unique_pictures = [faker.image_url() for _ in range(len(album_artist))]
 
-    tabla_artistas = []
-
-    for a in album_artist['artists']:
-        tabla_artistas.append({
-            'artista_id': faker.unique.ascii_email(),
+    tabla_artistas = [
+        {
+            'artista_id': unique_emails[i],
             'name': a,
-            'password': faker.unique.password(randint(8,12)),
-            'picture': faker.image_url()
-        })
+            'password': unique_passwords[i],
+            'picture': unique_pictures[i]
+        }
+        for i, a in enumerate(album_artist['artists'])
+    ]
 
     return tabla_artistas
 
@@ -37,16 +37,12 @@ t_artists = tabla_artistas()
 artist_email_map = {a['name']: a['artista_id'] for a in t_artists}
 
 def tabla_canciones():
-    # artist_id, genre#release_date, genre, name, data
-    # TODO: en el mapeo hay el atributo json data pero no sé que colocar en data
-    # data : explicit, danceability, energy, key, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo, time_signature, track_genre
     tabla_canciones = []
-    for index, row in df.iterrows():
-        artist_name = row['artists']
-        artist_id = artist_email_map.get(artist_name, "")
+    artist_ids = df['artists'].map(artist_email_map.get)
 
+    for index, row in df.iterrows():
         tabla_canciones.append({
-            'artist_id': artist_id,
+            'artist_id': artist_ids[index],
             'genre': row['track_genre'],
             'name': row['track_name'],
             'data': {
@@ -72,34 +68,30 @@ def tabla_canciones():
 
 def tabla_albumes():
     # artist_id, name, release_date
-    tabla_albumes = []
+    albumes = []
     for index, row in df.iterrows():
         artist_name = row['artists']
         artist_id = artist_email_map.get(artist_name, "")
-        artist_name = row['artists']
-        album_name = row['album_name']
-        genre = row['track_genre'] #TODO FIX LOGIC
-        tabla_albumes.append({
+
+        albumes.append({
             'artist_id': artist_id,
-            'name': album_name,
-            'date#genre': faker.date_this_century().strftime('%Y-%m-%d') + "#" + genre,
-            'genre': genre
-
+            'name': row['album_name'],
+            'release_date': faker.date_this_decade()
         })
-    return tabla_albumes
+    return
 
 
-t_albums = tabla_albumes()
-t_songs = tabla_canciones()
-
-df_artists = p.DataFrame(t_artists)
-df_songs = p.DataFrame(t_songs)
-df_albums = p.DataFrame(t_albums)
-
-# Save to CSV files
-df_artists.to_csv('artists.csv', index=False)
-df_songs.to_csv('songs.csv', index=False)
-df_albums.to_csv('albums.csv', index=False)
-
-print("Done!")
+# t_albums = tabla_albumes()
+# t_songs = tabla_canciones()
+#
+# df_artists = p.DataFrame(t_artists)
+# df_songs = p.DataFrame(t_songs)
+# df_albums = p.DataFrame(t_albums)
+#
+# # Save to CSV files
+# df_artists.to_csv('artists.csv', index=False)
+# df_songs.to_csv('songs.csv', index=False)
+# df_albums.to_csv('albums.csv', index=False)
+#
+# print("Done!")
 
