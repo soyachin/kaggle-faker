@@ -4,9 +4,8 @@ import json
 from faker import Faker
 from random import randint
 
-# Configuración de Faker
 faker = Faker()
-Faker.seed(10)
+Faker.seed(0)
 
 def cargar_archivo_csv(archivo):
     try:
@@ -29,6 +28,8 @@ def generar_artistas(album_artist):
         'picture': [faker.image_url() for _ in range(len(artistas))]
     })
 
+    df_artists = df_artists[['artista_id', 'country', 'name', 'password', 'picture']]
+
     print(f"Generados {len(df_artists)} artistas.")
     return df_artists
 
@@ -39,7 +40,7 @@ def generar_albumes(df, df_artists):
 
     unique_albums = df.drop_duplicates(subset=['album_name'])
 
-    album_dates = {album: faker.date_this_century().strftime('%Y-%m-%d')
+    album_dates = {album: str(faker.date_this_century().year)
                    for album in unique_albums['album_name']}
 
     albumes = pd.DataFrame({
@@ -49,6 +50,8 @@ def generar_albumes(df, df_artists):
         'album_uuid': [str(uuid.uuid4()) for _ in range(len(unique_albums))],
         'name': unique_albums['album_name']
     })
+
+    albumes = albumes[['artist_id', 'genre#date', 'genre', 'album_uuid', 'name']]
 
     print(f"Generados {len(albumes)} álbumes.")
     return albumes, album_dates
@@ -64,21 +67,17 @@ def serializar_datos_cancion(row):
     })
 
 def generar_canciones(df, df_artists, album_dates):
-    """Generar DataFrame de canciones"""
     print("Generando tabla de canciones...")
 
-    # Mapeo de artist_ids
     artist_id_map = dict(zip(df_artists['name'], df_artists['artista_id']))
 
-    # Añadir artist_id al DataFrame
-    df['artist_id'] = df['artists'].map(artist_id_map)
+    df['genre#date'] = df.apply(
+        lambda row: f"{row['track_genre']}#{row['album_name'] in album_dates and album_dates[row['album_name']] or str(faker.date_this_century().year)}",
+        axis=1
+    )
 
-    # Añadir fechas de álbumes a las canciones
-    df['genre#date'] = df['track_genre'] + '#' + df['album_name'].map(album_dates)
-
-    # Preparar canciones
     canciones = pd.DataFrame({
-        'artist_id': df['artist_id'],
+        'artist_id': df['artists'].map(artist_id_map),
         'genre#date': df['genre#date'],
         'genre': df['track_genre'],
         'song_uuid': [str(uuid.uuid4()) for _ in range(len(df))],
@@ -86,11 +85,12 @@ def generar_canciones(df, df_artists, album_dates):
         'data': df.apply(serializar_datos_cancion, axis=1)
     })
 
+    canciones = canciones[['artist_id', 'genre#date', 'genre', 'song_uuid', 'name', 'data']]
+
     print(f"Generadas {len(canciones)} canciones.")
     return canciones
 
 def main():
-
     df = cargar_archivo_csv('dataset_mod.csv')
     if df is None:
         return
@@ -104,12 +104,11 @@ def main():
     df_songs = generar_canciones(df, df_artists, album_dates)
 
     print("Guardando archivos CSV...")
-    df_artists[['artista_id', 'country', 'name', 'password', 'picture']].to_csv('artists.csv', index=False)
+    df_artists.to_csv('artists.csv', index=False)
     df_songs.to_csv('songs.csv', index=False)
     df_albums.to_csv('albums.csv', index=False)
 
     print("¡Archivos generados correctamente!")
-
 
 if __name__ == "__main__":
     main()
