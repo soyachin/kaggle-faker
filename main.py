@@ -1,4 +1,4 @@
-import csv, pandas as p
+import pandas as p
 from random import randint
 from faker import Faker
 from faker.providers import internet
@@ -76,11 +76,13 @@ def tabla_albumes():
     for index, row in df.iterrows():
         artist_name = row['artists']
         artist_id = artist_email_map.get(artist_name, "")
-        genre = artist_email_map.get(row['track_genre'], "")
+        artist_name = row['artists']
+        album_name = row['album_name']
+        genre = row['track_genre'] #TODO FIX LOGIC
         tabla_albumes.append({
             'artist_id': artist_id,
-            'name': row['album_name'],
-            'date': faker.date_this_century(),
+            'name': album_name,
+            'date#genre': faker.date_this_century().strftime('%Y-%m-%d') + "#" + genre,
             'genre': genre
 
         })
