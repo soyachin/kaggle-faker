@@ -6,7 +6,10 @@
   <component name="ChangeListManager">
     <list default="true" id="1a8f6a3d-89b3-478a-96e1-740434fdb88d" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/albums.csv" beforeDir="false" afterPath="$PROJECT_DIR$/albums.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/artists.csv" beforeDir="false" afterPath="$PROJECT_DIR$/artists.csv" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/songs.csv" beforeDir="false" afterPath="$PROJECT_DIR$/songs.csv" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -84,7 +87,8 @@
       <workItem from="1732922057434" duration="7440000" />
       <workItem from="1732941106187" duration="22000" />
       <workItem from="1732941157167" duration="1674000" />
-      <workItem from="1732972104657" duration="980000" />
+      <workItem from="1732972104657" duration="1657000" />
+      <workItem from="1732985256614" duration="748000" />
     </task>
     <servers />
   </component>
@@ -93,6 +97,6 @@
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/fakes$fix_dataset.coverage" NAME="fix_dataset Coverage Results" MODIFIED="1732942438183" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/fakes$main.coverage" NAME="main Coverage Results" MODIFIED="1732972614057" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/fakes$main.coverage" NAME="main Coverage Results" MODIFIED="1732973718323" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

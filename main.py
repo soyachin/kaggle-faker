@@ -1,97 +1,115 @@
-import pandas as p
-from random import randint
+import pandas as pd
+import uuid
+import json
 from faker import Faker
-from faker.providers import internet
+from random import randint
 
-# track_id,artists,album_name,track_name,popularity,duration_ms,explicit,danceability,energy,key,loudness,mode,speechiness,acousticness,instrumentalness,liveness,valence,tempo,time_signature,track_genre
-df = p.read_csv('dataset_mod.csv')
-
+# Configuración de Faker
 faker = Faker()
 Faker.seed(10)
-faker.add_provider(internet)
 
-nrows = df.shape[0]
+def cargar_archivo_csv(archivo):
+    try:
+        df = pd.read_csv(archivo)
+        print("Archivo leído correctamente.")
+        return df
+    except Exception as e:
+        print(f"Error al leer el archivo: {e}")
+        return None
 
-album_artist = df[['album_name', 'artists', 'track_genre']].drop_duplicates()
-print(album_artist.to_csv(index=False))
-genre_list = df['track_genre'].unique()
+def generar_artistas(album_artist):
+    print("Generando artistas...")
+    artistas = album_artist['artists'].drop_duplicates().reset_index(drop=True)
 
-def tabla_artistas():
-    unique_emails = [faker.unique.ascii_email() for _ in range(len(album_artist))]
-    unique_passwords = [faker.unique.password(randint(8, 12)) for _ in range(len(album_artist))]
-    unique_pictures = [faker.image_url() for _ in range(len(album_artist))]
+    df_artists = pd.DataFrame({
+        'artista_id': [faker.unique.ascii_email() for _ in range(len(artistas))],
+        'country': [faker.country() for _ in range(len(artistas))],
+        'name': artistas,
+        'password': [faker.unique.password(length=randint(8, 12)) for _ in range(len(artistas))],
+        'picture': [faker.image_url() for _ in range(len(artistas))]
+    })
 
-    tabla_artistas = [
-        {
-            'artista_id': unique_emails[i],
-            'name': a,
-            'password': unique_passwords[i],
-            'picture': unique_pictures[i]
-        }
-        for i, a in enumerate(album_artist['artists'])
-    ]
+    print(f"Generados {len(df_artists)} artistas.")
+    return df_artists
 
-    return tabla_artistas
+def generar_albumes(df, df_artists):
+    print("Generando tabla de álbumes...")
 
-t_artists = tabla_artistas()
-artist_email_map = {a['name']: a['artista_id'] for a in t_artists}
+    artist_id_map = dict(zip(df_artists['name'], df_artists['artista_id']))
 
-def tabla_canciones():
-    tabla_canciones = []
-    artist_ids = df['artists'].map(artist_email_map.get)
+    unique_albums = df.drop_duplicates(subset=['album_name'])
 
-    for index, row in df.iterrows():
-        tabla_canciones.append({
-            'artist_id': artist_ids[index],
-            'genre': row['track_genre'],
-            'name': row['track_name'],
-            'data': {
-                'explicit': row['explicit'],
-                'danceability': row['danceability'],
-                'energy': row['energy'],
-                'key': row['key'],
-                'loudness': row['loudness'],
-                'mode': row['mode'],
-                'speechiness': row['speechiness'],
-                'acousticness': row['acousticness'],
-                'instrumentalness': row['instrumentalness'],
-                'liveness': row['liveness'],
-                'valence': row['valence'],
-                'tempo': row['tempo'],
-                'time_signature': row['time_signature'],
-                'track_genre': row['track_genre']
-            }
-        })
-    return tabla_canciones
+    album_dates = {album: faker.date_this_century().strftime('%Y-%m-%d')
+                   for album in unique_albums['album_name']}
+
+    albumes = pd.DataFrame({
+        'artist_id': unique_albums['artists'].map(artist_id_map),
+        'genre#date': unique_albums['track_genre'] + '#' + unique_albums['album_name'].map(album_dates),
+        'genre': unique_albums['track_genre'],
+        'album_uuid': [str(uuid.uuid4()) for _ in range(len(unique_albums))],
+        'name': unique_albums['album_name']
+    })
+
+    print(f"Generados {len(albumes)} álbumes.")
+    return albumes, album_dates
+
+def serializar_datos_cancion(row):
+
+    return json.dumps({
+        key: row[key] for key in [
+            'explicit', 'danceability', 'energy', 'key', 'loudness',
+            'mode', 'speechiness', 'acousticness', 'instrumentalness',
+            'liveness', 'valence', 'tempo', 'time_signature', 'track_genre'
+        ]
+    })
+
+def generar_canciones(df, df_artists, album_dates):
+    """Generar DataFrame de canciones"""
+    print("Generando tabla de canciones...")
+
+    # Mapeo de artist_ids
+    artist_id_map = dict(zip(df_artists['name'], df_artists['artista_id']))
+
+    # Añadir artist_id al DataFrame
+    df['artist_id'] = df['artists'].map(artist_id_map)
+
+    # Añadir fechas de álbumes a las canciones
+    df['genre#date'] = df['track_genre'] + '#' + df['album_name'].map(album_dates)
+
+    # Preparar canciones
+    canciones = pd.DataFrame({
+        'artist_id': df['artist_id'],
+        'genre#date': df['genre#date'],
+        'genre': df['track_genre'],
+        'song_uuid': [str(uuid.uuid4()) for _ in range(len(df))],
+        'name': df['track_name'],
+        'data': df.apply(serializar_datos_cancion, axis=1)
+    })
+
+    print(f"Generadas {len(canciones)} canciones.")
+    return canciones
+
+def main():
+
+    df = cargar_archivo_csv('dataset_mod.csv')
+    if df is None:
+        return
+
+    album_artist = df[['album_name', 'artists', 'track_genre']].drop_duplicates()
+
+    df_artists = generar_artistas(album_artist)
+
+    df_albums, album_dates = generar_albumes(df, df_artists)
+
+    df_songs = generar_canciones(df, df_artists, album_dates)
+
+    print("Guardando archivos CSV...")
+    df_artists[['artista_id', 'country', 'name', 'password', 'picture']].to_csv('artists.csv', index=False)
+    df_songs.to_csv('songs.csv', index=False)
+    df_albums.to_csv('albums.csv', index=False)
+
+    print("¡Archivos generados correctamente!")
 
 
-
-def tabla_albumes():
-    # artist_id, name, release_date
-    albumes = []
-    for index, row in df.iterrows():
-        artist_name = row['artists']
-        artist_id = artist_email_map.get(artist_name, "")
-
-        albumes.append({
-            'artist_id': artist_id,
-            'name': row['album_name'],
-            'release_date': faker.date_this_decade()
-        })
-    return
-
-
-# t_albums = tabla_albumes()
-# t_songs = tabla_canciones()
-#
-# df_artists = p.DataFrame(t_artists)
-# df_songs = p.DataFrame(t_songs)
-# df_albums = p.DataFrame(t_albums)
-#
-# # Save to CSV files
-# df_artists.to_csv('artists.csv', index=False)
-# df_songs.to_csv('songs.csv', index=False)
-# df_albums.to_csv('albums.csv', index=False)
-#
-# print("Done!")
-
+if __name__ == "__main__":
+    main()
