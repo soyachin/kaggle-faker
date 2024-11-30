@@ -40,7 +40,7 @@ def generar_albumes(df, df_artists):
 
     unique_albums = df.drop_duplicates(subset=['album_name'])
 
-    album_dates = {album: str(faker.date_this_century().year)
+    album_dates = {album: faker.date_this_century().strftime('%Y-%m-%d')
                    for album in unique_albums['album_name']}
 
     albumes = pd.DataFrame({
@@ -57,7 +57,6 @@ def generar_albumes(df, df_artists):
     return albumes, album_dates
 
 def serializar_datos_cancion(row):
-
     return json.dumps({
         key: row[key] for key in [
             'explicit', 'danceability', 'energy', 'key', 'loudness',
@@ -70,15 +69,11 @@ def generar_canciones(df, df_artists, album_dates):
     print("Generando tabla de canciones...")
 
     artist_id_map = dict(zip(df_artists['name'], df_artists['artista_id']))
-
-    df['genre#date'] = df.apply(
-        lambda row: f"{row['track_genre']}#{row['album_name'] in album_dates and album_dates[row['album_name']] or str(faker.date_this_century().year)}",
-        axis=1
-    )
+    album_date_map = {album: date for album, date in album_dates.items()}
 
     canciones = pd.DataFrame({
         'artist_id': df['artists'].map(artist_id_map),
-        'genre#date': df['genre#date'],
+        'genre#date': df['track_genre'] + '#' + df['album_name'].map(album_date_map),
         'genre': df['track_genre'],
         'song_uuid': [str(uuid.uuid4()) for _ in range(len(df))],
         'name': df['track_name'],
